@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Olympic Draft Tracker - Milano Cortina 2026</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #f0f0f0;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .controls h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        input, select, button {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-refresh {
+            background: #10b981;
+        }
+
+        .btn-refresh:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .leaderboard {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .leaderboard h2 {
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .last-updated {
+            font-size: 0.9em;
+            color: #666;
+            font-weight: normal;
+        }
+
+        .participant {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .participant:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .participant-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .rank {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            min-width: 50px;
+        }
+
+        .rank.first { color: #FFD700; }
+        .rank.second { color: #C0C0C0; }
+        .rank.third { color: #CD7F32; }
+
+        .participant-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            flex-grow: 1;
+        }
+
+        .total-medals {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-right: 20px;
+        }
+
+        .medal-breakdown {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+
+        .medal-count {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 1.1em;
+        }
+
+        .medal-icon {
+            font-size: 1.3em;
+        }
+
+        .countries {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .country-tag {
+            background: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .country-medals {
+            color: #667eea;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .delete-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .delete-btn:hover {
+            background: #dc2626;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8em; }
+            .input-group { flex-direction: column; }
+            .participant-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .medal-breakdown { flex-direction: column; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏅 Family Olympic Draft Tracker</h1>
+        <p class="subtitle">Milano Cortina 2026 Winter Olympics</p>
+
+        <div class="controls">
+            <h2>Add Family Member</h2>
+            <div class="input-group">
+                <input type="text" id="nameInput" placeholder="Family member name" style="flex: 1;">
+                <select id="countrySelect" style="flex: 1;">
+                    <option value="">Select a country...</option>
+                </select>
+                <button onclick="addCountryToDraft()">Add Country</button>
+            </div>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button onclick="fetchMedalData()" class="btn-refresh">🔄 Refresh Medal Counts</button>
+                <button onclick="clearAllData()" class="btn-danger">🗑️ Clear All Data</button>
+            </div>
+        </div>
+
+        <div class="leaderboard">
+            <h2>
+                <span>🏆 Leaderboard</span>
+                <span class="last-updated" id="lastUpdated"></span>
+            </h2>
+            <div id="leaderboardContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Available countries based on 2026 Winter Olympics participants
+        const countries = [
+            'Norway', 'Italy', 'Japan', 'Sweden', 'Czechia', 'Switzerland', 'United States of America',
+            'Austria', 'France', 'Germany', 'Slovenia', 'Canada', "People's Republic of China",
+            'Netherlands', 'Finland', 'South Korea', 'Great Britain', 'Russia', 'Australia',
+            'Poland', 'Slovakia', 'Belgium', 'Spain', 'New Zealand', 'Latvia', 'Ukraine'
+        ];
+
+        // Medal data (will be fetched from Olympics.com)
+        let medalData = {
+            'Norway': { gold: 2, silver: 1, bronze: 2 },
+            'Italy': { gold: 1, silver: 1, bronze: 3 },
+            'Japan': { gold: 1, silver: 1, bronze: 1 },
+            'Sweden': { gold: 1, silver: 1, bronze: 0 },
+            'Czechia': { gold: 1, silver: 0, bronze: 0 },
+            'Switzerland': { gold: 1, silver: 0, bronze: 0 },
+            'United States of America': { gold: 1, silver: 0, bronze: 0 },
+            'Austria': { gold: 0, silver: 1, bronze: 0 },
+            'France': { gold: 0, silver: 1, bronze: 0 },
+            'Germany': { gold: 0, silver: 1, bronze: 0 },
+            'Slovenia': { gold: 0, silver: 1, bronze: 0 },
+            'Canada': { gold: 0, silver: 0, bronze: 1 },
+            "People's Republic of China": { gold: 0, silver: 0, bronze: 1 }
+        };
+
+        // Family drafts stored in localStorage
+        let familyDrafts = JSON.parse(localStorage.getItem('olympicDrafts')) || {};
+
+        // Initialize
+        function init() {
+            populateCountrySelect();
+            updateLeaderboard();
+            updateLastUpdated();
+        }
+
+        function populateCountrySelect() {
+            const select = document.getElementById('countrySelect');
+            countries.sort().forEach(country => {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = country;
+                select.appendChild(option);
+            });
+        }
+
+        function addCountryToDraft() {
+            const name = document.getElementById('nameInput').value.trim();
+            const country = document.getElementById('countrySelect').value;
+
+            if (!name) {
+                alert('Please enter a family member name!');
+                return;
+            }
+
+            if (!country) {
+                alert('Please select a country!');
+                return;
+            }
+
+            if (!familyDrafts[name]) {
+                familyDrafts[name] = [];
+            }
+
+            if (familyDrafts[name].includes(country)) {
+                alert(`${name} already has ${country}!`);
+                return;
+            }
+
+            familyDrafts[name].push(country);
+            saveDrafts();
+            updateLeaderboard();
+
+            document.getElementById('countrySelect').value = '';
+            alert(`Added ${country} to ${name}'s draft!`);
+        }
+
+        function saveDrafts() {
+            localStorage.setItem('olympicDrafts', JSON.stringify(familyDrafts));
+        }
+
+        function calculateMedals(countries) {
+            let total = { gold: 0, silver: 0, bronze: 0, total: 0 };
+            countries.forEach(country => {
+                if (medalData[country]) {
+                    total.gold += medalData[country].gold;
+                    total.silver += medalData[country].silver;
+                    total.bronze += medalData[country].bronze;
+                }
+            });
+            total.total = total.gold + total.silver + total.bronze;
+            return total;
+        }
+
+        function updateLeaderboard() {
+            const content = document.getElementById('leaderboardContent');
+            
+            if (Object.keys(familyDrafts).length === 0) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No participants yet!</h3>
+                        <p>Add family members and their drafted countries to get started.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Calculate medals for each person
+            const standings = Object.keys(familyDrafts).map(name => {
+                const medals = calculateMedals(familyDrafts[name]);
+                return { name, countries: familyDrafts[name], medals };
+            });
+
+            // Sort by total medals
+            standings.sort((a, b) => b.medals.total - a.medals.total);
+
+            // Generate HTML
+            content.innerHTML = standings.map((participant, index) => {
+                const rank = index + 1;
+                let rankClass = '';
+                if (rank === 1) rankClass = 'first';
+                else if (rank === 2) rankClass = 'second';
+                else if (rank === 3) rankClass = 'third';
+
+                const countriesHTML = participant.countries.map(country => {
+                    const countryMedals = medalData[country] || { gold: 0, silver: 0, bronze: 0 };
+                    const countryTotal = countryMedals.gold + countryMedals.silver + countryMedals.bronze;
+                    return `
+                        <div class="country-tag">
+                            ${country}
+                            <span class="country-medals">(${countryTotal})</span>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="participant">
+                        <div class="participant-header">
+                            <span class="rank ${rankClass}">#${rank}</span>
+                            <span class="participant-name">${participant.name}</span>
+                            <span class="total-medals">${participant.medals.total}</span>
+                            <button class="delete-btn" onclick="deleteParticipant('${participant.name}')">Delete</button>
+                        </div>
+                        <div class="medal-breakdown">
+                            <div class="medal-count">
+                                <span class="medal-icon">🥇</span>
+                                <span>${participant.medals.gold}</span>
+                            </div>
+                            <div class="medal-count">
+                                <span class="medal-icon">🥈</span>
+                                <span>${participant.medals.silver}</span>
+                            </div>
+                            <div class="medal-count">
+                                <span class="medal-icon">🥉</span>
+                                <span>${participant.medals.bronze}</span>
+                            </div>
+                        </div>
+                        <div class="countries">
+                            ${countriesHTML}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function deleteParticipant(name) {
+            if (confirm(`Remove ${name} from the tracker?`)) {
+                delete familyDrafts[name];
+                saveDrafts();
+                updateLeaderboard();
+            }
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear ALL data? This cannot be undone!')) {
+                familyDrafts = {};
+                saveDrafts();
+                updateLeaderboard();
+            }
+        }
+
+        async function fetchMedalData() {
+            const btn = event.target;
+            btn.textContent = '⏳ Fetching...';
+            btn.disabled = true;
+
+            try {
+                // In a real implementation, you'd fetch from Olympics.com API
+                // For now, we'll simulate it with the current data
+                
+                // You could use a proxy or CORS-enabled endpoint to fetch real data
+                // const response = await fetch('https://olympics.com/en/milano-cortina-2026/medals');
+                
+                alert('Medal data refreshed! (In production, this would fetch live data from Olympics.com)');
+                
+                updateLeaderboard();
+                updateLastUpdated();
+            } catch (error) {
+                alert('Error fetching medal data. Please try again.');
+                console.error(error);
+            } finally {
+                btn.textContent = '🔄 Refresh Medal Counts';
+                btn.disabled = false;
+            }
+        }
+
+        function updateLastUpdated() {
+            const now = new Date();
+            const formatted = now.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            document.getElementById('lastUpdated').textContent = `Last updated: ${formatted}`;
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
