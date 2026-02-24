@@ -331,18 +331,38 @@ const canvas = document.getElementById('simCanvas');
 const ctx = canvas.getContext('2d');
 
 // Compound data: static and kinetic friction coefficients
+// Soft rubber is king — it deforms and maximises contact area.
+// Sandpaper is abrasive but rigid → poor conformity → lower real-world grip.
+// Grooves HELP on wet/slippery, HURT on dry (less contact area).
 const COMPOUNDS = {
-  'HARD RUBBER': { mus: 0.85, muk: 0.60, color: '#c0c0c0' },
-  'SOFT RUBBER': { mus: 1.20, muk: 0.90, color: '#ff5050' },
-  'SANDPAPER':   { mus: 1.60, muk: 1.30, color: '#d4a860' },
-  'TEFLON':      { mus: 0.12, muk: 0.06, color: '#88eeff' },
+  'HARD RUBBER': { mus: 0.80, muk: 0.58, color: '#c0c0c0',
+    note: 'Stiff. Less deformation = less contact area.' },
+  'SOFT RUBBER': { mus: 1.20, muk: 0.92, color: '#ff5050',
+    note: 'Best dry grip. Deforms to maximise contact patch.' },
+  'SANDPAPER':   { mus: 0.70, muk: 0.50, color: '#d4a860',
+    note: 'Rigid & abrasive. Doesn\'t conform to surface = low grip.' },
+  'TEFLON':      { mus: 0.12, muk: 0.06, color: '#88eeff',
+    note: 'Near-zero friction. Slippery control compound.' },
+};
+
+// Groove depth levels and their effect on friction
+// Grooves displace water/debris on wet surfaces → massive wet grip boost
+// But they reduce rubber-to-road contact area on dry → small dry grip penalty
+// groove: 0=slick, 1=shallow, 2=medium, 3=deep
+const GROOVE_EFFECTS = {
+  0: { label: 'SLICK',   dryMult: 1.00, wetMult: 0.40, snowMult: 0.30, desc: 'Max dry grip. Zero wet clearance.' },
+  1: { label: 'SHALLOW', dryMult: 0.93, wetMult: 0.75, snowMult: 0.65, desc: 'Slight wet improvement, minor dry loss.' },
+  2: { label: 'MEDIUM',  dryMult: 0.85, wetMult: 1.00, snowMult: 0.85, desc: 'Optimal balance. Standard road tyre.' },
+  3: { label: 'DEEP',    dryMult: 0.75, wetMult: 1.10, snowMult: 1.10, desc: 'Max wet/snow clearance. Significant dry penalty.' },
 };
 
 const state = {
   angle: 15,
   mass: 1200,
   surfaceMu: 1.0,
+  surfaceType: 'dry',   // 'dry' | 'wet' | 'snow'
   compound: 'SOFT RUBBER',
+  groove: 2,            // 0=slick, 1=shallow, 2=medium, 3=deep
 };
 
 const sim = {
@@ -362,8 +382,13 @@ function getC() { return COMPOUNDS[state.compound]; }
 function physics() {
   const theta = state.angle * Math.PI / 180;
   const c = getC();
-  const mu_s = c.mus * state.surfaceMu;
-  const mu_k = c.muk * state.surfaceMu;
+  const ge = GROOVE_EFFECTS[state.groove];
+  // Pick groove multiplier based on surface type
+  const grooveMult = state.surfaceType === 'dry' ? ge.dryMult
+                   : state.surfaceType === 'snow' ? ge.snowMult
+                   : ge.wetMult;
+  const mu_s = c.mus * state.surfaceMu * grooveMult;
+  const mu_k = c.muk * state.surfaceMu * grooveMult;
   const fNorm    = state.mass * G * Math.cos(theta);
   const fDown    = state.mass * G * Math.sin(theta);
   const fStatic  = mu_s * fNorm;
@@ -372,7 +397,7 @@ function physics() {
   const fNet = fDown - fKinetic;
   const accel = sim.isSlipping ? Math.max(0, fNet) / state.mass : 0;
   const gripMargin = fStatic > 0 ? Math.min(1, fStatic / Math.max(fDown, 0.001)) : 1;
-  return { fDown, fNorm, fStatic, fKinetic, fNet, accel, threshAngle, gripMargin };
+  return { fDown, fNorm, fStatic, fKinetic, fNet, accel, threshAngle, gripMargin, grooveMult };
 }
 
 // Resize canvas
